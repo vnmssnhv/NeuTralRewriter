@@ -34,57 +34,57 @@ def find_sents(sentences):
      for sent in sentences:
           addSent=False
 
-          if totalcounter < 700:
-               if hecounter < 75:
+          if totalcounter < 100:
+               if hecounter < 10:
                     if ' he ' in sent.lower():
                          addSent = True
                          hecount = countOccurences(sent, 'he')
                          hecounter += hecount
                          totalcounter += hecount
 
-               if shecounter < 75:
+               if shecounter < 10:
                     if ' she ' in sent.lower():
                          addSent = True
                          shecount = countOccurences(sent, 'she')
                          shecounter += shecount
                          totalcounter += shecount
 
-               if hercounter < 65:
+               if hercounter < 10:
                     if ' her ' in sent.lower():
                          addSent = True
                          hercount = countOccurences(sent, 'her')
                          hercounter += hercount
                          totalcounter += hercount
 
-               if hiscounter < 65:
+               if hiscounter < 10:
                     if ' his ' in sent.lower():
                          addSent = True
                          hiscount = countOccurences(sent, 'his')
                          hiscounter += hiscount
                          totalcounter += hiscount
 
-               if herscounter < 65:
+               if herscounter < 10:
                     if ' hers ' in sent.lower():
                          addSent = True
                          herscount = countOccurences(sent, 'hers')
                          herscounter += herscount
                          totalcounter += herscount
 
-               if himcounter < 65:
+               if himcounter < 10:
                     if ' him ' in sent.lower():
                          addSent = True
                          himcount = countOccurences(sent, 'him')
                          himcounter += himcount
                          totalcounter += himcount
 
-               if herselfcounter < 65:
+               if herselfcounter < 10:
                     if ' herself ' in sent.lower():
                          addSent = True
                          herselfcount = countOccurences(sent, 'herself')
                          herselfcounter += herselfcount
                          totalcounter += herselfcount
 
-               if himselfcounter < 65:
+               if himselfcounter < 10:
                     if ' himself ' in sent.lower():
                          addSent = True
                          himselfcount = countOccurences(sent, 'himself')
