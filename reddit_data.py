@@ -1,6 +1,7 @@
-import re
 import csv
 import json
+import random
+import re
 
 # reproducibility bit ----------------
 from random import seed; seed(42)
@@ -9,6 +10,7 @@ import os; os.environ['PYTHONHASHSEED'] = str(42)
 # -----------------------------------
 
 from tqdm import tqdm
+from glob import glob
 
 
 class DataLoader(object):
@@ -19,8 +21,31 @@ class DataLoader(object):
 
 class RedditLoader(DataLoader):
 
-    def __init__(self):
-        pass
+    def __init__(self, snap_dir='/data/reddit', year=2019):
+        self.snap_dir = snap_dir
+        self.year = year
+
+    def _iter(self):
+        for file_name in glob(self.snap_dir + '/*' + self.year + '*'):
+            try:
+                if 'zst' not in file_name and 'bz2' not in file_name:
+                    open_func = open
+                elif 'bz2' in file_name:  # NOTE: old format compatibility
+                    import bz2
+                    open_func = bz2.open
+                else:
+                    return
+                for line in tqdm(open_func(file_name, 'r')):
+                    reddit_object = json.loads(line)
+                    yield reddit_object['id'], reddit_object['body']
+            except Exception as e:
+                print(f"Error in: {e}")
+
+    def find_gender(self, text):
+        return re.findall(r'(?:[^A-Za-z0-9]+)' +
+                          r'([sS]he|[hH]e|[hH]is|[hH]im|' +
+                          r'[hH]er|[hH]ers|[hH]imself|[hH]erself]){1}' +
+                          r'[^A-Za-z0-9]', text)
 
     def preprocess_sent(self, sent):
         sent = ' '.join(sent.replace('\n', ' ').split())
@@ -30,73 +55,43 @@ class RedditLoader(DataLoader):
             sent = sent + '.'
         return sent
 
-    def find_gender_in_reddit(self, reddit_object):
-        _id, text = reddit_object['id'], reddit_object['body']
-        sents = re.split(r'\.|\?|\!', text)
-        for sent in sents:
-            # NOTE: this should be replaced with get_sample regex
-            if re.findall(
-              r'(?:[^A-Za-z0-9]+)([sS]*[Hh])(e|is|er|im|[^A-Za-z0-9]){1}' +
-              r'(self|s)*[^A-Za-z0-9]', sent):
-                yield _id, self.preprocess_sent(sent)
+    def doc_to_gender_sents(self, doc):
+        for sent in re.split(r'\.|\?|\!', doc):
+            if self.find_gender(sent):
+                yield self.preprocess_sent(sent)
 
-    def iter_file(self, file_name):
-        try:
-            if 'zst' not in file_name and 'bz2' not in file_name:
-                open_func = open
-            elif 'bz2' in file_name:
-                import bz2
-                open_func = bz2.open
-            else:
-                return
-            for line in tqdm(open_func(file_name, 'r')):
-                yield json.loads(line)
-        except Exception as e:
-            print(f"Error in: {e}")
-
-    def reddit_gender(self, f):
-        csv_writer = csv.writer(open('./reddit_gender.csv', 'a'), delimiter=',',
+    def to_full_csv(self, file_out='./reddit_gender.csv'):
+        csv_writer = csv.writer(open(file_out, 'a'), delimiter=',',
                                 quotechar="'", quoting=csv.QUOTE_ALL)
-        for reddit_object in self.iter_file(f):
-            for _id, sent in self.find_gender_in_reddit(reddit_object):
+        for _id, doc in tqdm(self._iter()):
+            for sent in self.doc_to_gender_sents(doc):
                 csv_writer.writerow([_id, sent])
-                # print(_id, sent)
 
-    def get_sample(self):
-        import random
+    def get_samples(self):
+        data, samples = {}, {}
+        for _id, doc in tqdm(self._iter()):
+            for ix, sent in enumerate(self.doc_to_gender_sents(doc)):
+                data[ix] = (_id, sent)
+                for hit in self.find_gender(sent):
+                    form = ''.join(hit).lower()
+                    if form == 'hisself':  # nope
+                        continue
+                    if not samples.get(form):
+                        samples[form] = []
+                    samples[form].append(ix)
+        return data, samples
 
-        data = {}
-        samples = {}
-        for i, *row in tqdm(enumerate(
-          csv.reader(open('./reddit_gender.csv', 'r'),
-                     delimiter=',', quotechar="'", quoting=csv.QUOTE_ALL))):
-            _id, sent = row[0]
-            data[i] = (_id, sent)
-            for hit in re.findall(
-              r'(?:[^A-Za-z0-9]+)([sS]he|[hH]e|[hH]is|[hH]im|[hH]er|[hH]ers|' +
-              r'[hH]imself|[hH]erself]){1}[^A-Za-z0-9]', sent):
-                form = ''.join(hit).lower()
-                if form == 'hisself':  # nope
-                    continue
-                if not samples.get(form):
-                    samples[form] = []
-                samples[form].append(i)
-
-        sample_idx = []
-        print("forms:", {k: len(v) for k, v in samples.items()})
-        with open('./reddit_test.csv', 'w') as fo:
-            with open('./reddit_test_ids.csv', 'w') as _fo:
-                for sample in samples:
-                    for instance in random.sample(samples[sample], 80):
-                        sample_idx.append(instance)
-                        fo.write(data[instance][1] + '\n')
-                        _fo.write(str(instance) + '\n')
-
-        csv_writer = csv.writer(open('./reddit_train.csv', 'w'), delimiter=',',
-                                quotechar="'", quoting=csv.QUOTE_ALL)
-        for i, (_id, sent) in tqdm(data.items()):
-            if i not in sample_idx:
-                csv_writer.writerow([_id, sent])
+    def to_train_test_splits(self):
+        (data, samples), sample_idx = self.get_samples(), []
+        with open('./reddit.test', 'w') as fo:
+            for sample in samples:
+                for instance in random.sample(samples[sample], 80):
+                    sample_idx.append(instance)
+                    fo.write(data[instance][1] + '\n')
+        with open('./reddit.test', 'w') as fo:
+            for ix, (_id, sent) in tqdm(data.items()):
+                if ix not in sample_idx:
+                    fo.write(sent + '\n')
 
 
 if __name__ == '__main__':
