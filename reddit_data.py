@@ -35,6 +35,7 @@ class RedditLoader(DataLoader):
         self.year = year
 
     def _iter(self):
+        """Iter through snaps yielding id and body per post."""
         for file_name in glob(self.snap_dir + '/*' + self.year + '*'):
             try:
                 if 'zst' not in file_name and 'bz2' not in file_name:
@@ -52,6 +53,7 @@ class RedditLoader(DataLoader):
 
     @staticmethod
     def find_gender(text):
+        """Regex to find gendered text."""
         return re.findall(r'(?:[^A-Za-z0-9]+)' +
                           r'([sS]he|[hH]e|[hH]is|[hH]im|' +
                           r'[hH]er|[hH]ers|[hH]imself|[hH]erself]){1}' +
@@ -59,6 +61,7 @@ class RedditLoader(DataLoader):
 
     @staticmethod
     def preprocess_sent(sent):
+        """Remove whitespaces, cut char trails, add period."""
         sent = ' '.join(sent.replace('\n', ' ').split())
         if sent[0] == ' ':
             sent = sent[1:]
@@ -67,6 +70,7 @@ class RedditLoader(DataLoader):
         return sent
 
     def _doc_to_gender_sents(self, doc):
+        """Split doc in sentences, find_gender, preprocess sents."""
         for sent in re.split(r'\.|\?|\!', doc):
             if self.find_gender(sent):
                 yield self.preprocess_sent(sent)
@@ -86,6 +90,7 @@ class RedditLoader(DataLoader):
                 csv_writer.writerow([_id, sent])
 
     def _get_samples(self):
+        """Get indexed data and post indices per gender word."""
         data, samples = {}, {}
         for _id, doc in tqdm(self._iter()):
             for ix, sent in enumerate(self.doc_to_gender_sents(doc)):
