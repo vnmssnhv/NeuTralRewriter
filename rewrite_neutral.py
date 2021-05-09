@@ -31,8 +31,8 @@ def write_output(outputfile, output):
 def rewriteheshe(sentences, language):
     nsents = []
     for sent in sentences:
-        nsent = [word if word.lower() != 'she' and word.lower() != 'he' else 
-                 'they' if word == "she" or word == "he" else "They" 
+        nsent = [word if word.lower() != 'she' and word.lower() != 'he' else
+                 'they' if word == "she" or word == "he" else "They"
                  for word in sent.split()]
         nsents.append(" ".join(nsent))
     return language, nsents
