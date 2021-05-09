@@ -2,18 +2,21 @@
 import codecs
 import argparse
 
+
 def maketestset(infile, outfile):
-     sentences = read_file(infile)
-     testset= find_sents(sentences)
-     print(len(testset))
-     write_output(outfile,testset)
+    sentences = read_file(infile)
+    testset = find_sents(sentences)
+    print(len(testset))
+    write_output(outfile, testset)
+
 
 def read_file(input):
-    with codecs.open(input,'r') as inF:
-        input_sents=inF.readlines()
+    with codecs.open(input, 'r') as inF:
+        input_sents = inF.readlines()
     return input_sents
 
-def write_output(outputfile,output):
+
+def write_output(outputfile, output):
      with codecs.open(outputfile, 'w') as outF:
          outF.write(''.join(output))
 
