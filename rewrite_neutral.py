@@ -35,6 +35,7 @@ tool = language_tool_python.LanguageTool('en-US')
 def correctgram(sents):
     correct_s=[]
     for s in sents:
+        s = s.replace("’","'" )
         s = s.replace('they is ', 'they are ')
         s = s.replace('They is ', ' They are ')
         s = s.replace('They was ', 'They were ')
@@ -42,6 +43,8 @@ def correctgram(sents):
         s = s.replace('They wasn ', 'They weren ')
         s = s.replace('they wasn ', 'they weren ')
         s = s.replace("they 's ", "they are ")
+        s = s.replace("they ' s ", "they are ")
+        s = s.replace("They ' s ", "They are ")
         s = s.replace("They 's ", "They are ")
         s = s.replace("They does ", "They do ")
         s = s.replace("they does ", "they do ")
@@ -49,6 +52,10 @@ def correctgram(sents):
         new_matches = [match for match in matches if match.category == 'GRAMMAR'] #correct only grammar issues
         s=language_tool_python.utils.correct(s,new_matches)  #
         s = s.replace ("'t 't", " 't")
+        s = s.replace ("'t ' t", " 't")
+        s = s.replace ("' t ' t", " 't")
+        #s = s.replace("'t ’ t", " 't")
+        #s = s.replace("'t ’t", " 't")
         s = s.replace("they doesn", "they don")
         s = s.replace("They doesn", "They don")
         s = s.replace('they isn ', 'they aren ')
