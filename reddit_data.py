@@ -3,27 +3,33 @@ import json
 import random
 import re
 
-# reproducibility bit ----------------
-from random import seed; seed(42)
-from numpy.random import seed as np_seed; np_seed(42)
-import os; os.environ['PYTHONHASHSEED'] = str(42)
-# -----------------------------------
-
 from tqdm import tqdm
 from glob import glob
+
+# reproducibility bit ----------------
+from random import seed
+from numpy.random import seed as np_seed
+import os
+seed(42)
+np_seed(42)
+os.environ['PYTHONHASHSEED'] = str(42)
+# -----------------------------------
 
 
 class DataLoader(object):
 
-    def __init__(self, file_name):
+    def __init__(self, file_name_in, file_name_out):
         """General DataLoader class for loading and filtering sentences.
 
         Parameters
         ----------
-        file_name : str
+        file_name_in : str
+            Full path to input file to read.
+        file_name_out : str
             Full path to file to read.
-        """        
-        self.file_name = file_name
+        """
+        self.file_name_in = file_name_in
+        self.file_name_out = file_name_out
 
     @staticmethod
     def find_gender(text):
@@ -35,29 +41,28 @@ class DataLoader(object):
 
     def _iter(self):
         """Iter through sentences yielding sent if it contains gender."""
-        with open(self.file_name, 'r') as fo:
+        with open(self.file_name_in, 'r') as fo:
             for sent in tqdm(fo.readlines()):
                 if self.find_gender(sent):
                     yield sent
 
-    def to_full_csv(self, file_out='./reddit_gender.csv'):
-        """Dump full dataset as csv in file_out location.
+    def to_file(self):
+        """Dump full dataset as text file in file_out location.
 
         Parameters
         ----------
         file_out : str, optional
             directory path of dump file, by default './reddit_gender.csv'
         """
-        csv_writer = csv.writer(open(file_out, 'a'), delimiter=',',
-                                quotechar="'", quoting=csv.QUOTE_ALL)
-        for _id, sent in tqdm(self._iter()):
-            csv_writer.writerow([_id, sent])
+        csv_writer = open(self.file_name_out, 'w')
+        for sent in tqdm(self._iter()):
+            csv_writer.write(sent + '\n')
 
     def _get_samples(self):
         """Get indexed data and post indices per gender word."""
         data, samples = {}, {}
-        for ix, (_id, sent) in tqdm(enumerate(self._iter())):
-            data[ix] = (_id, sent)
+        for ix, sent in tqdm(enumerate(self._iter())):
+            data[ix] = sent
             for hit in self.find_gender(sent):
                 form = ''.join(hit).lower()
                 if form == 'hisself':  # nope
@@ -67,7 +72,7 @@ class DataLoader(object):
                 samples[form].append(ix)
         return data, samples
 
-    def to_train_test_splits(self, dir_out='./'):
+    def to_train_test_splits(self):
         """Dump train and test splits in dir_out location.
 
         Parameters
@@ -76,21 +81,22 @@ class DataLoader(object):
             directory path to dump train and test, by default './'
         """
         (data, samples), sample_idx = self._get_samples(), []
-        with open(dir_out + 'reddit.test', 'w') as fo:
+        out = re.sub(r'\..*', '.', self.file_name_out)
+        with open(out + 'train', 'w') as fo:
             for sample in samples:
                 for instance in random.sample(samples[sample], 80):
                     sample_idx.append(instance)
                     fo.write(data[instance][1] + '\n')
-        with open(dir_out + './reddit.test', 'w') as fo:
-            for ix, (_id, sent) in tqdm(data.items()):
+        with open(out + 'test', 'w') as fo:
+            for ix, sent in tqdm(data.items()):
                 if ix not in sample_idx:
                     fo.write(sent + '\n')
 
 
 class OpenSubsLoader(DataLoader):
 
-    def __init__(self, file_name='/data/opensubs/opensubs.txt'):
-        self.file_name = file_name
+    def __init__(self, file_name_in='/data/opensubs/opensubs.txt'):
+        self.file_name_in = file_name_in
 
 
 class RedditLoader(DataLoader):
@@ -138,13 +144,10 @@ class RedditLoader(DataLoader):
                 for line in tqdm(open_func(file_name, 'r')):
                     reddit_object = json.loads(line)
                     for sent in self._filter_sents(reddit_object['body']):
-                        yield reddit_object['id'], sent
+                        yield sent
             except Exception as e:
                 print(f"Error in: {e}")
 
 
 if __name__ == '__main__':
-    # from glob import glob
-    # from multiprocessing import Pool
-    # get_sample()
     pass
