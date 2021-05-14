@@ -1,4 +1,3 @@
-import csv
 import json
 import random
 import re
@@ -18,18 +17,15 @@ os.environ['PYTHONHASHSEED'] = str(42)
 
 class DataLoader(object):
 
-    def __init__(self, file_name_in, file_name_out):
+    def __init__(self, file_in):
         """General DataLoader class for loading and filtering sentences.
 
         Parameters
         ----------
-        file_name_in : str
+        file_in : str
             Full path to input file to read.
-        file_name_out : str
-            Full path to file to read.
         """
-        self.file_name_in = file_name_in
-        self.file_name_out = file_name_out
+        self.file_in = file_in
 
     @staticmethod
     def find_gender(text):
@@ -40,20 +36,20 @@ class DataLoader(object):
 
     def _iter(self):
         """Iter through sentences yielding sent if it contains gender."""
-        with open(self.file_name_in, 'r') as fo:
+        with open(self.file_in, 'r') as fo:
             for sent in tqdm(fo.readlines()):
                 if self.find_gender(sent):
                     yield sent
 
-    def to_file(self):
+    def to_file(self, file_out):
         """Dump full dataset as text file in file_out location.
 
         Parameters
         ----------
         file_out : str, optional
-            directory path of dump file, by default './reddit_gender.csv'
+            directory path of dump file
         """
-        with open(self.file_name_out, 'w') as fo:
+        with open(file_out, 'w') as fo:
             for sent in tqdm(self._iter()):
                 fo.write(sent)
 
@@ -71,18 +67,20 @@ class DataLoader(object):
                 samples[form].append(ix)
         return data, samples
 
-    def to_train_test_splits(self, n_samples=11, randomize=True):
+    def to_train_test_splits(self, file_out, n_samples=11, randomize=True):
         """Dump train and test splits in dir_out location.
 
         Parameters
         ----------
+        file_out : str
+            full txt file path where to dump the splits (.txt will be renamed)
         n_samples : int, optional
             n amount sampled per gendered word, by default 10
         randomize : bool, optional
             randomize sampling procedure, otherwise head, by default True
         """
         (data, samples), sample_idx = self._get_samples(), []
-        out = re.sub(r'\.[^\/].*', '.', self.file_name_out)
+        out = re.sub(r'\.[^\/].*', '.', file_out)
         with open(out + 'test', 'w') as fo:
             selection = []
             for sample in samples:
@@ -158,5 +156,5 @@ class RedditLoader(DataLoader):
 
 
 if __name__ == '__main__':
-    dl = DataLoader('./evaluation/orig-subs.txt', './evaluation/edit-subs.txt')
-    dl.to_train_test_splits(randomize=False)
+    dl = DataLoader('./evaluation/orig-subs.txt')
+    dl.to_train_test_splits('./evaluation/edit-subs.txt', randomize=False)
