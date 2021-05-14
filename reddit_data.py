@@ -34,10 +34,9 @@ class DataLoader(object):
     @staticmethod
     def find_gender(text):
         """Regex to find gendered text."""
-        return re.findall(r'(?:[^A-Za-z0-9]+)' +
-                          r'([sS]he|[hH]e|[hH]is|[hH]im|' +
-                          r'[hH]er|[hH]ers|[hH]imself|[hH]erself]){1}' +
-                          r'[^A-Za-z0-9]', text)
+        return re.findall(r'(?:[^a-z0-9]+)' +
+                          r'(she|he|his|him|her|hers|himself|herself){1}' +
+                          r'(?=[^a-z0-9])', text.lower())
 
     def _iter(self):
         """Iter through sentences yielding sent if it contains gender."""
@@ -54,9 +53,9 @@ class DataLoader(object):
         file_out : str, optional
             directory path of dump file, by default './reddit_gender.csv'
         """
-        csv_writer = open(self.file_name_out, 'w')
-        for sent in tqdm(self._iter()):
-            csv_writer.write(sent + '\n')
+        with open(self.file_name_out, 'w') as fo:
+            for sent in tqdm(self._iter()):
+                fo.write(sent)
 
     def _get_samples(self):
         """Get indexed data and post indices per gender word."""
@@ -72,25 +71,34 @@ class DataLoader(object):
                 samples[form].append(ix)
         return data, samples
 
-    def to_train_test_splits(self):
+    def to_train_test_splits(self, n_samples=11, randomize=True):
         """Dump train and test splits in dir_out location.
 
         Parameters
         ----------
-        dir_out : str, optional
-            directory path to dump train and test, by default './'
+        n_samples : int, optional
+            n amount sampled per gendered word, by default 10
+        randomize : bool, optional
+            randomize sampling procedure, otherwise head, by default True
         """
         (data, samples), sample_idx = self._get_samples(), []
-        out = re.sub(r'\..*', '.', self.file_name_out)
-        with open(out + 'train', 'w') as fo:
-            for sample in samples:
-                for instance in random.sample(samples[sample], 80):
-                    sample_idx.append(instance)
-                    fo.write(data[instance][1] + '\n')
+        out = re.sub(r'\.[^\/].*', '.', self.file_name_out)
         with open(out + 'test', 'w') as fo:
+            selection = []
+            for sample in samples:
+                if randomize:
+                    selection += random.sample(set(samples[sample]), n_samples)
+                else:
+                    selection += sorted(samples[sample])[:n_samples]
+
+            for instance in set(sorted(selection)):
+                sample_idx.append(instance)
+                fo.write(data[instance])
+
+        with open(out + 'train', 'w') as fo:
             for ix, sent in tqdm(data.items()):
                 if ix not in sample_idx:
-                    fo.write(sent + '\n')
+                    fo.write(sent)
 
 
 class OpenSubsLoader(DataLoader):
@@ -150,4 +158,5 @@ class RedditLoader(DataLoader):
 
 
 if __name__ == '__main__':
-    pass
+    dl = DataLoader('./evaluation/orig-subs.txt', './evaluation/edit-subs.txt')
+    dl.to_train_test_splits(randomize=False)
