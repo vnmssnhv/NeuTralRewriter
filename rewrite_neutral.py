@@ -25,23 +25,44 @@ class NeutralRewriter(object):
         ----------
         language : str, optional
             language identifier for stanza, by default 'en'
+        parse : bool, optional
+            if doc requires parsing using stanza, by default False
+        advanced : bool, optional
+            invoke advanced gender neutral word replacements, by default False
         """        
-        self.stanza = self.stanza_init(language, parse)
+        self.stanza = self._stanza_init(language, parse)
         self.tool = language_tool_python.LanguageTool('en-US')
         self.parse = parse
         self.advanced = advanced
 
-    def stanza_init(self, language, parse):
+    def _stanza_init(self, language, parse):
+        """Initalizes stanza either for tokenization or not."""
         return stanza.Pipeline(
             lang=language, processors='tokenize,mwt,pos,lemma,depparse',
             tokenize_pretokenized='true' if not parse else 'false')
 
+    @staticmethod
     def dict_replace(self, sent, d):
+        """Replaces strings in sent based on key value pairs in d.
+
+        Parameters
+        ----------
+        sent : str
+            a sentence from a document
+        d : dict
+            key is query, value is replacement string
+
+        Returns
+        -------
+        str
+            a sentence with word keys replaced
+        """        
         for hit in re.findall(r'|'.join(d), sent):
             sent = sent.replace(hit, d[hit])
         return sent
 
-    def genderneutral(self, sent):
+    def _genderneutral(self, sent):
+        """Rewrite specific words to their gender neutral variants."""
         gender_lang = {
             #################################
             # 1. CHANGE INTO GENDER NEUTRAL #
@@ -182,7 +203,8 @@ class NeutralRewriter(object):
         }
         return self.dict_replace(sent, gender_lang)
 
-    def correctgram(self, sent):
+    def _correctgram(self, sent):
+        """Manual correct word grams and automatic correct grammar."""
         correct_s = []
         d1 = {
             "’": "'",
@@ -217,7 +239,9 @@ class NeutralRewriter(object):
         sent = language_tool_python.utils.correct(sent, new_matches)
         return self.dict_replace(sent, d2)
 
+    @staticmethod
     def match_case(self, word, query):
+        """Case query based on casing of word."""
         return query.capitalize() if word.text[0].isupper() else query
 
     def process_sentence(self, sent, parse=False):
@@ -256,14 +280,38 @@ class NeutralRewriter(object):
 
         new_sent = " ".join(sent_map)
         if self.advanced:
-            new_sent = genderneutral(new_sent)
-        return self.correctgram(new_sent)
+            new_sent = self._genderneutral(new_sent)
+        return self._correctgram(new_sent)
 
     def process_document(self, document):
+        """Splits document in sentences and rewrites those to gender neutral.
+
+        Parameters
+        ----------
+        document : str
+            a document with multiple sentences, to be parsed
+
+        Yields
+        -------
+        str
+            a sentence that has been made gender neutral
+        """        
         for sent in self.stanza(document).sentences:
             yield self.process_sentence(sent)
 
     def process_file(self, file_in):
+        """Process file_in line by line to rewrite gender-neutral.
+
+        Parameters
+        ----------
+        file_in : str
+            full path to file to be rewritten
+
+        Yields
+        -------
+        str
+            a sentence that has been made gender neutral
+        """        
         with open(file_in, 'r') as fi:
             for line in fi.readlines():
                 if self.parse:
@@ -273,6 +321,15 @@ class NeutralRewriter(object):
                     yield self.process_sentence(line, parse=True)
 
     def save(self, output, output_file):
+        """Save output to output_file.
+
+        Parameters
+        ----------
+        output : iterable
+            an interable containing sentences
+        output_file : str
+            full file path to file to be saved
+        """        
         with open(output_file, 'w') as fo:
             for sent in output:
                 fo.write(sent + '\n')
