@@ -1,10 +1,9 @@
 import json
 import random
 import re
-
-import spacy
-from tqdm import tqdm
 from glob import glob
+
+from tqdm import tqdm
 
 
 class DataLoader(object):
@@ -144,7 +143,6 @@ class RedditLoader(DataLoader):
         """
         self.snap_dir = snap_dir
         self.year = period
-        self.nlp = spacy.load('en_core_web_sm', disable=['tagger', 'ner'])
 
     def _extract_sentences(self, doc):
         """Detects simple sentence boundaries and returns them as splits."""
