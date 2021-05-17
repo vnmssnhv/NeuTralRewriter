@@ -4,8 +4,6 @@ import re
 import language_tool_python
 import stanza
 
-from dataloader import DataLoader
-
 # reproducibility bit ----------------
 from random import seed
 from numpy.random import seed as np_seed
@@ -29,7 +27,7 @@ class NeutralRewriter(object):
             if doc requires parsing using stanza, by default False
         advanced : bool, optional
             invoke advanced gender neutral word replacements, by default False
-        """        
+        """
         self.stanza = self._stanza_init(language, parse)
         self.tool = language_tool_python.LanguageTool('en-US')
         self.parse = parse
@@ -56,7 +54,7 @@ class NeutralRewriter(object):
         -------
         str
             a sentence with word keys replaced
-        """        
+        """
         for hit in re.findall(r'|'.join(d), sent):
             sent = sent.replace(hit, d[hit])
         return sent
@@ -205,7 +203,6 @@ class NeutralRewriter(object):
 
     def _correctgram(self, sent):
         """Manual correct word grams and automatic correct grammar."""
-        correct_s = []
         d1 = {
             "’": "'",
             'they is ': 'they are ',
@@ -235,7 +232,7 @@ class NeutralRewriter(object):
         sent = self.dict_replace(sent, d1)
         matches = self.tool.check(sent)
         new_matches = [match for match in matches if match.category ==
-                        'GRAMMAR']  # correct only grammar issues
+                       'GRAMMAR']  # correct only grammar issues
         sent = language_tool_python.utils.correct(sent, new_matches)
         return self.dict_replace(sent, d2)
 
@@ -245,15 +242,29 @@ class NeutralRewriter(object):
         return query.capitalize() if word.text[0].isupper() else query
 
     def process_sentence(self, sent, parse=False):
+        """Process sentence (runs full rule-based neutralizer).
+
+        Parameters
+        ----------
+        sent : str
+            single sentence to be converted into gender neutral variants
+        parse : bool, optional
+            if sentence still requires stanza parsing, by default False
+
+        Returns
+        -------
+        str
+            gender-neutral sentence
+        """
         if parse:
             sent = self.stanza(sent).sentences[0]
         sent_map = [word.text for word in sent.words]
         for i, word in enumerate(sent.words):
             _word = word.text.lower()
-            
+
             if _word == 'he' or _word == 'she':
                 sent_map[i] = self.match_case(word, 'they')
-            
+
             elif _word == 'his':
                 sent_map[i] = self.match_case(word, 'their')
                 if word.deprel != "nmod:poss":
@@ -295,7 +306,7 @@ class NeutralRewriter(object):
         -------
         str
             a sentence that has been made gender neutral
-        """        
+        """
         for sent in self.stanza(document).sentences:
             yield self.process_sentence(sent)
 
@@ -311,7 +322,7 @@ class NeutralRewriter(object):
         -------
         str
             a sentence that has been made gender neutral
-        """        
+        """
         with open(file_in, 'r') as fi:
             for line in fi.readlines():
                 if self.parse:
@@ -329,7 +340,7 @@ class NeutralRewriter(object):
             an interable containing sentences
         output_file : str
             full file path to file to be saved
-        """        
+        """
         with open(output_file, 'w') as fo:
             for sent in output:
                 fo.write(sent + '\n')
