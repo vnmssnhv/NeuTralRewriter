@@ -20,7 +20,7 @@ class DataLoader(object):
             filter data based on gender, by default True
         language : str, optional
             language code for stanza, by default 'en'
-        """        
+        """
         self.file_in = file_in
         self.filter = gender_filter
 
@@ -39,7 +39,7 @@ class DataLoader(object):
         -------
         list
             list with hit groups if not join else list with concatenated hits
-        """        
+        """
         hits = re.findall(r'(?:[^a-z0-9])' +
                           r'(she|he|his|him|her|hers|himself|herself){1}' +
                           r'(?=[^a-z0-9])', text.lower())
@@ -126,7 +126,7 @@ class OpenSubsLoader(DataLoader):
         ----------
         file_nanme : str, optional
             full path to sub file, by default '/data/opensubs/opensubs.txt'
-        """        
+        """
         self.file_nanme = file_nanme
 
 
@@ -181,7 +181,7 @@ class RedditLoader(DataLoader):
 
 
 if __name__ == '__main__':
-    dl = DataLoader('./evaluation/orig-subs.txt')
-    dl.to_train_test_splits('./evaluation/edit-subs.txt', randomize=False)
+    # dl = DataLoader('./evaluation/orig-subs.txt')
+    # dl.to_train_test_splits('./evaluation/edit-subs.txt', randomize=False)
     dl = RedditLoader()
     dl.to_train_test_splits('./evaluation/reddit-gender.txt')
