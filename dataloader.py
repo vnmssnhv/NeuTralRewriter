@@ -118,15 +118,15 @@ class DataLoader(object):
 
 class OpenSubsLoader(DataLoader):
 
-    def __init__(self, file_nanme='/data/opensubs/opensubs.txt'):
+    def __init__(self, file_name='/data/opensubs/opensubs.txt'):
         """Loader for the OpenSubs corpus.
 
         Parameters
         ----------
-        file_nanme : str, optional
+        file_name : str, optional
             full path to sub file, by default '/data/opensubs/opensubs.txt'
         """
-        self.file_nanme = file_nanme
+        self.file_name = file_name
 
 
 class RedditLoader(DataLoader):
@@ -146,12 +146,14 @@ class RedditLoader(DataLoader):
 
     def _extract_sentences(self, doc):
         """Detects simple sentence boundaries and returns them as splits."""
-        matches = re.findall(r'[\?\!\.]+', doc)
-        splits = re.split(r'[\?\!\.]+', doc)
+        matches = re.findall(r'([\?\!\.] |\n)', doc)
+        splits = re.split(r'([\?\!\.] |\n)', doc)
         if len(splits) + 1 == len(matches):
             matches.append('')
         for sent, suffix in zip(splits, matches):
-            yield sent + suffix
+            sent = (sent + suffix).replace('\n', ' ')
+            if len(sent) > 4:
+                yield sent
 
     def _filter_sents(self, doc):
         """Split doc in sentences, find_gender, preprocess sents."""
