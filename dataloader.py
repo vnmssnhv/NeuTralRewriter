@@ -153,13 +153,14 @@ class RedditLoader(DataLoader):
         for sent, suffix in zip(splits, matches):
             sent = (sent + suffix).replace('\n', ' ')
             if len(sent) > 4:
-                yield sent
+                yield sent + '\n'
 
     def _filter_sents(self, doc):
         """Split doc in sentences, find_gender, preprocess sents."""
         if self.find_gender(doc):
             for sent in self._extract_sentences(doc):
-                yield sent
+                if self.find_gender(sent):
+                    yield sent
 
     def __iter__(self):
         """Iter through snaps yielding id and body per post."""
