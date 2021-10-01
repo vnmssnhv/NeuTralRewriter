@@ -2,9 +2,9 @@
 import codecs
 import argparse
 
-def maketestset(infile, outfile):
+def maketestset(infile, outfile, total_counts):
      sentences = read_file(infile)
-     testset= find_sents(sentences)
+     testset= find_sents(sentences, total_counts)
      print(len(testset))
      write_output(outfile,testset)
 
@@ -17,7 +17,7 @@ def write_output(outputfile,output):
      with codecs.open(outputfile, 'w') as outF:
          outF.write(''.join(output))
 
-def find_sents(sentences):
+def find_sents(sentences, total_counts):
      hecounter=0
      shecounter=0
      hercounter=0
@@ -28,84 +28,83 @@ def find_sents(sentences):
      herselfcounter=0
 
      totalcounter=0
+     maxcount = total_counts // 8 #8 is the number of all pronouns
 
      testset = []
 
      for sent in sentences:
           addSent=False
 
-          if totalcounter < 100:
-               if hecounter < 10:
-                    if ' he ' in sent.lower():
-                         addSent = True
-                         hecount = countOccurences(sent, 'he')
-                         hecounter += hecount
-                         totalcounter += hecount
+          if hecounter < maxcount:
+              if ' he ' in sent.lower():
+                  addSent = True
+                  hecount = countOccurences(sent, 'he')
+                  hecounter += hecount
+                  totalcounter += hecount
 
-               if shecounter < 10:
-                    if ' she ' in sent.lower():
-                         addSent = True
-                         shecount = countOccurences(sent, 'she')
-                         shecounter += shecount
-                         totalcounter += shecount
+          if shecounter < maxcount:
+              if ' she ' in sent.lower():
+                   addSent = True
+                   shecount = countOccurences(sent, 'she')
+                   shecounter += shecount
+                   totalcounter += shecount
 
-               if hercounter < 10:
-                    if ' her ' in sent.lower():
-                         addSent = True
-                         hercount = countOccurences(sent, 'her')
-                         hercounter += hercount
-                         totalcounter += hercount
+          if hercounter < maxcount:
+              if ' her ' in sent.lower():
+                  addSent = True
+                  hercount = countOccurences(sent, 'her')
+                  hercounter += hercount
+                  totalcounter += hercount
 
-               if hiscounter < 10:
-                    if ' his ' in sent.lower():
-                         addSent = True
-                         hiscount = countOccurences(sent, 'his')
-                         hiscounter += hiscount
-                         totalcounter += hiscount
+          if hiscounter < maxcount:
+              if ' his ' in sent.lower():
+                  addSent = True
+                  hiscount = countOccurences(sent, 'his')
+                  hiscounter += hiscount
+                  totalcounter += hiscount
 
-               if herscounter < 10:
-                    if ' hers ' in sent.lower():
-                         addSent = True
-                         herscount = countOccurences(sent, 'hers')
-                         herscounter += herscount
-                         totalcounter += herscount
+          if herscounter < maxcount:
+              if ' hers ' in sent.lower():
+                  addSent = True
+                  herscount = countOccurences(sent, 'hers')
+                  herscounter += herscount
+                  totalcounter += herscount
 
-               if himcounter < 10:
-                    if ' him ' in sent.lower():
-                         addSent = True
-                         himcount = countOccurences(sent, 'him')
-                         himcounter += himcount
-                         totalcounter += himcount
+          if himcounter < maxcount:
+              if ' him ' in sent.lower():
+                  addSent = True
+                  himcount = countOccurences(sent, 'him')
+                  himcounter += himcount
+                  totalcounter += himcount
 
-               if herselfcounter < 10:
-                    if ' herself ' in sent.lower():
-                         addSent = True
-                         herselfcount = countOccurences(sent, 'herself')
-                         herselfcounter += herselfcount
-                         totalcounter += herselfcount
+          if herselfcounter < maxcount:
+              if ' herself ' in sent.lower():
+                  addSent = True
+                  herselfcount = countOccurences(sent, 'herself')
+                  herselfcounter += herselfcount
+                  totalcounter += herselfcount
 
-               if himselfcounter < 10:
-                    if ' himself ' in sent.lower():
-                         addSent = True
-                         himselfcount = countOccurences(sent, 'himself')
-                         himselfcounter += himselfcount
-                         totalcounter += himselfcount
+          if himselfcounter < maxcount:
+              if ' himself ' in sent.lower():
+                  addSent = True
+                  himselfcount = countOccurences(sent, 'himself')
+                  himselfcounter += himselfcount
+                  totalcounter += himselfcount
 
-               if addSent == True:
-                    testset.append(sent)
+          if addSent == True:
+              testset.append(sent)
 
      print("hecounter: " + str(hecounter) + "\n" + "shecounter: " + str(shecounter) + "\n" \
           "hercounter: " + str(hercounter) + "\n" + "himcounter: " + str(himcounter) + "\n" \
           "herscounter: " + str(herscounter) + "\n" + "hiscounter: " + str(hiscounter) + "\n" \
           "herselfcounter: " + str(herselfcounter) + "\n" + "himselfcounter: " + str(himselfcounter) + "\n" \
           "totalcounter: " + str(totalcounter))
-     print(testset)
      return testset
 
 def countOccurences(str, word):
      # split the string by spaces in a
      a = str.lower().split(" ")
-     print(str)
+     # print(str)
      # search for pattern in a
      count = 0
      for i in range(0, len(a)):
@@ -120,5 +119,6 @@ if __name__ == '__main__':
      parser = argparse.ArgumentParser(description='parse sentences using stanzaNLP')
      parser.add_argument("-i", "--input_file", required=True)
      parser.add_argument("-o", "--output_file", required=True)
+     parser.add_argument("-t", "--total_count", required=True, default=2000)
      args = parser.parse_args()
-     maketestset(args.input_file, args.output_file)
+     maketestset(args.input_file, args.output_file, int(args.total_count))

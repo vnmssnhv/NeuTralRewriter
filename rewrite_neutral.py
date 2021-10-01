@@ -40,7 +40,7 @@ class NeutralRewriter(object):
             tokenize_pretokenized='true' if not parse else 'false')
 
     @staticmethod
-    def dict_replace(self, sent, d):
+    def dict_replace(sent, d):
         """Replaces strings in sent based on key value pairs in d.
 
         Parameters
@@ -237,7 +237,7 @@ class NeutralRewriter(object):
         return self.dict_replace(sent, d2)
 
     @staticmethod
-    def match_case(self, word, query):
+    def match_case(word, query):
         """Case query based on casing of word."""
         return query.capitalize() if word.text[0].isupper() else query
 
@@ -261,7 +261,6 @@ class NeutralRewriter(object):
         sent_map = [word.text for word in sent.words]
         for i, word in enumerate(sent.words):
             _word = word.text.lower()
-
             if _word == 'he' or _word == 'she':
                 sent_map[i] = self.match_case(word, 'they')
 

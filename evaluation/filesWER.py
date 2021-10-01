@@ -10,7 +10,8 @@ def read_file(input):
 
 def write_output(outputfile, output):
      with codecs.open(outputfile, 'w') as outF:
-         outF.write(str(output))
+         print(str(output * 100) + "%")
+         outF.write(str(output * 100) + "%")
 
 def compute_wer(ref_file, hyp_file, out_file):
     references = read_file(ref_file)
